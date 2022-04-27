@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace GOLAssignment
 {
@@ -27,11 +28,13 @@ namespace GOLAssignment
         //bool deciding neighbor settings
         bool neighbors = true;
         //current seed
-        int seed;
+        int seed = Properties.Settings.Default.seed;
         //Milliseconds
         int MIntervals = Properties.Settings.Default.MIntervals;
         //Bool to turn HUD ON/OFF
         bool HUDcheck = false;
+        //LiveCellCount
+        int counter = 0;
 
         // Drawing colors
         Color gridColor = Properties.Settings.Default.gridColor;
@@ -137,6 +140,8 @@ namespace GOLAssignment
             // A Brush for filling living cells interiors (color)
             Brush cellBrush = new SolidBrush(cellColor);
             Brush DeadBrush = new SolidBrush(backcolor);
+            Color hudColor = Color.FromArgb(100, 1, 1, 1);
+            Brush hudBrush = new SolidBrush(hudColor);
 
             // Iterate through the universe in the y, top to bottom
             for (float y = 0; y < universe.GetLength(1); y++)
@@ -172,11 +177,28 @@ namespace GOLAssignment
                     }
                     //This Code is to count the neighbors, and put the number of neighbors in a cell...
 
-                    Font font = new Font("Arial", 20f);
+                    Font font = new Font("Arial", 15f);
 
                     StringFormat stringFormat = new StringFormat();
                     stringFormat.Alignment = StringAlignment.Center;
                     stringFormat.LineAlignment = StringAlignment.Center;
+
+
+                    StringFormat HUDstring = new StringFormat();
+                    HUDstring.Alignment = StringAlignment.Near;
+                    HUDstring.LineAlignment = StringAlignment.Center;
+                    Rectangle HUDrect = new Rectangle(universe.GetLength(0), universe.GetLength(1), graphicsPanel1.ClientSize.Width, graphicsPanel1.ClientSize.Height);
+                   
+                    if(HUDcheck == true)
+                    {
+                        e.Graphics.DrawString(
+                        "Generations = " + generations.ToString() +
+                        "\nLiving Cell Count =" + counter.ToString() +
+                        "\nCurrent Seed: " + seed.ToString(),
+                        font, hudBrush, HUDrect, HUDstring);
+                    }
+                    
+
 
                     RectangleF rect = new RectangleF(cellRect.X, cellRect.Y, cellRect.Width, cellRect.Height);
 
@@ -214,6 +236,9 @@ namespace GOLAssignment
                             e.Graphics.DrawString(CountNey.ToString(), font, Brushes.Black, rect, stringFormat);
                         }
                     }
+
+                    
+
                 }
             }
             // Cleaning up pens and brushes
@@ -465,6 +490,7 @@ namespace GOLAssignment
             Properties.Settings.Default.xx = xx;
             Properties.Settings.Default.yy = yy;
             Properties.Settings.Default.Save();
+            Properties.Settings.Default.seed = seed;
         }
         //Grid Toggle Setting Check Mark functionality done
         private void gridToolStripMenuItem_Click(object sender, EventArgs e)
@@ -489,7 +515,6 @@ namespace GOLAssignment
         //Keeping track of living cells in display counter
         private void LivingCellStatus()
         {
-            int counter = 0;
             for (int i = 0; i < universe.GetLength(0); i++)
             {
                 for (int j = 0; j < universe.GetLength(1); j++)
@@ -612,7 +637,176 @@ namespace GOLAssignment
 
         private void hUDToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if(HUDcheck == true)
+            {
+                hUDToolStripMenuItem.Checked = false;
+                HUDcheck = false;
+            }
+            else
+            {
+                hUDToolStripMenuItem.Checked = true;
+                HUDcheck = true;
+            }
             
+            graphicsPanel1.Invalidate();
+        }
+
+        private void resetToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Reset();
+            grid = Properties.Settings.Default.grid;
+            gridColor = Properties.Settings.Default.gridColor;
+            cellColor = Properties.Settings.Default.cellColor;
+            backcolor = Properties.Settings.Default.backcolor;
+            MIntervals = Properties.Settings.Default.MIntervals;
+            xx = Properties.Settings.Default.xx;
+            yy = Properties.Settings.Default.yy;
+            universe = new bool[xx, yy];
+            newUniverse = new bool[xx, yy];
+            timer.Enabled = false;
+            generations = 0;
+            seed = Properties.Settings.Default.seed;
+            graphicsPanel1.Invalidate();
+            
+        }
+
+        private void reloadToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.Reload();
+            grid = Properties.Settings.Default.grid;
+            gridColor = Properties.Settings.Default.gridColor;
+            cellColor = Properties.Settings.Default.cellColor;
+            backcolor = Properties.Settings.Default.backcolor;
+            MIntervals = Properties.Settings.Default.MIntervals;
+            xx = Properties.Settings.Default.xx;
+            yy = Properties.Settings.Default.yy;
+            universe = new bool[xx, yy];
+            newUniverse = new bool[xx, yy];
+            timer.Enabled = false;
+            generations = 0;
+            seed = Properties.Settings.Default.seed;
+            graphicsPanel1.Invalidate();
+        }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.Filter = "All Files|*.*|Cells|*.cells";
+            dlg.FilterIndex = 2; dlg.DefaultExt = "cells";
+
+
+            if (DialogResult.OK == dlg.ShowDialog())
+            {
+                StreamWriter writer = new StreamWriter(dlg.FileName);
+                writer.WriteLine("GOL SAVE");
+
+                
+                for (int y = 0; y < yy; y++)
+     {
+                    
+                    String currentRow = string.Empty;
+
+                    
+                    for (int x = 0; x < xx; x++)
+          {
+                        if(universe[x,y] == true)
+                        {
+                            currentRow += "O";
+                        }
+                        else
+                        {
+                            currentRow += ".";
+                        }
+                    }
+
+                    writer.WriteLine(currentRow);
+                }
+                writer.Close();
+            }
+        }
+
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.Filter = "All Files|*.*|Cells|*.cells";
+            dlg.FilterIndex = 2;
+
+            if (DialogResult.OK == dlg.ShowDialog())
+            {
+                StreamReader reader = new StreamReader(dlg.FileName);
+
+                int maxWidth = 0;
+                int maxHeight = 0;
+
+                // Iterate through the file once to get its size.
+                while (!reader.EndOfStream)
+                {
+                    // Read one row at a time.
+                    string row = reader.ReadLine();
+
+                    // If the row begins with '!' then it is a comment
+                    // and should be ignored.
+
+                    // If the row is not a comment then it is a row of cells.
+                    // Increment the maxHeight variable for each row read.
+
+                    // Get the length of the current row string
+                    // and adjust the maxWidth variable if necessary.
+
+                    if (!row.StartsWith("!"))
+                    {
+                        maxHeight++;
+                        maxWidth = row.Count();
+                    }
+                }
+
+                // Resize the current universe and scratchPad
+                // to the width and height of the file calculated above.
+
+                xx = maxWidth;
+                yy = maxHeight;
+                universe = new bool[xx, yy];
+                newUniverse = new bool[xx, yy];
+
+
+
+                reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                int yPos = 0;
+                // Iterate through the file again, this time reading in the cells.
+                while (!reader.EndOfStream)
+                {
+                    // Read one row at a time.
+                    string row = reader.ReadLine();
+
+                    // If the row begins with '!' then
+                    // it is a comment and should be ignored.
+                    if (!row.StartsWith("!"))
+                    {
+                        for (int xPos = 0; xPos < row.Length; xPos++)
+                        {
+                            // If row[xPos] is a 'O' (capital O) then
+                            // set the corresponding cell in the universe to alive.
+                            if (row[xPos] == 'O')
+                            {
+                                universe[xPos, yPos] = true;
+                                newUniverse[xPos, yPos] = true;
+                            }
+                            else
+                            {
+                                universe[xPos, yPos] = false;
+                                newUniverse[xPos, yPos] = false;
+                            }
+
+
+                        }
+                        yPos++;
+                    }
+                }
+
+
+                reader.Close();
+                graphicsPanel1.Invalidate();
+            }
         }
     }
     

@@ -106,5 +106,17 @@ namespace GOLAssignment.Properties {
                 this["yy"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int seed {
+            get {
+                return ((int)(this["seed"]));
+            }
+            set {
+                this["seed"] = value;
+            }
+        }
     }
 }
