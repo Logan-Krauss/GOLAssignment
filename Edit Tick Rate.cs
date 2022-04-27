@@ -17,11 +17,23 @@ namespace GOLAssignment
             InitializeComponent();
         }
         public int MilisecondInt { get; set; }
+        public int Xaxis { get; set; }
+        public int Yaxis { get; set; }
 
         public int MillisecondInt
         {
             get { return (int)numericUpDown1.Value; }
             set { numericUpDown1.Value = value; }
+        }
+        public int Xaxissize
+        {
+            get { return (int)numericUpDown2.Value; }
+            set { numericUpDown2.Value = value; }
+        }
+        public int Yaxissize
+        {
+            get { return (int)numericUpDown3.Value; }
+            set { numericUpDown3.Value = value; }
         }
 
         private void AcceptMilisecond_Click(object sender, EventArgs e)
@@ -34,7 +46,4 @@ namespace GOLAssignment
             this.Close();
         }
     }
-    
-
-    
 }

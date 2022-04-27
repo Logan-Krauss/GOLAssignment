@@ -82,5 +82,29 @@ namespace GOLAssignment.Properties {
                 this["MIntervals"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("20")]
+        public int xx {
+            get {
+                return ((int)(this["xx"]));
+            }
+            set {
+                this["xx"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("20")]
+        public int yy {
+            get {
+                return ((int)(this["yy"]));
+            }
+            set {
+                this["yy"] = value;
+            }
+        }
     }
 }

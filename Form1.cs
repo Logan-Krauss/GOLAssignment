@@ -12,11 +12,14 @@ namespace GOLAssignment
 {
     public partial class Form1 : Form
     {
+        int xx = Properties.Settings.Default.xx;
+        int yy = Properties.Settings.Default.yy;
         
+
         // The universe array
-        bool[,] universe = new bool[20, 20];
+        bool[,] universe = new bool[Properties.Settings.Default.xx, Properties.Settings.Default.yy];
         //Universe for altering neighbors
-        int[,] newUniverse = new int[20, 20];
+        bool[,] newUniverse = new bool[Properties.Settings.Default.xx, Properties.Settings.Default.yy];
         //Bool to chane toridal and finite
         bool universeSwap = true;
         //bool determining grid being drawn or not
@@ -27,6 +30,8 @@ namespace GOLAssignment
         int seed;
         //Milliseconds
         int MIntervals = Properties.Settings.Default.MIntervals;
+        //Bool to turn HUD ON/OFF
+        bool HUDcheck = false;
 
         // Drawing colors
         Color gridColor = Properties.Settings.Default.gridColor;
@@ -53,35 +58,45 @@ namespace GOLAssignment
         // Calculate the next generation of cells
         private void NextGeneration()
         {
+            CopyUniverse();
+            int CountNey = 0;
 
             for(int i = 0; i < universe.GetLength(0); i++)
             {
                 for (int j = 0; j < universe.GetLength(1); j++)
                 {
+                    if (universeSwap == true)
+                    {
+                        CountNey = CountNeighborsFinite(i, j);
+                    }
+                    else
+                    {
+                        CountNey = CountNeighborsToroidal(i, j);
+                    }
 
                     //Living cells with less than 2 living neighbors die in the next generation
-                    if (newUniverse[i,j] < 2 && universe[i,j] == true)
+                    if (CountNey < 2 && universe[i,j] == true)
                     {
-                        universe[i, j] = false;
+                        newUniverse[i, j] = false;
                     }
 
                     //Living cells with more than 3 living neighbors die in the next generation.
-                    if (newUniverse[i, j] > 3 && universe[i, j] == true)
+                    if (CountNey > 3 && universe[i, j] == true)
                     {
-                        universe[i, j] = false;
+                        newUniverse[i, j] = false;
                     }
 
                     //Living cells with 2 or 3 living neighbors live in the next generations
 
-                    if ((newUniverse[i, j] == 2 || newUniverse[i, j] == 3) && universe[i,j] == true)
+                    if ((CountNey == 2 || CountNey == 3) && universe[i,j] == true)
                     {
-                        universe[i, j] = true;
+                        newUniverse[i, j] = true;
                     }
 
                     //Dead cells with exactly 3 living neighbors live in the next generation
-                    if (newUniverse[i, j] == 3 && universe[i, j] == false)
+                    if (CountNey == 3 && universe[i, j] == false)
                     {
-                        universe[i, j] = true;
+                        newUniverse[i, j] = true;
                     }
                     
                 }
@@ -95,7 +110,7 @@ namespace GOLAssignment
             // Update status strip generations
             toolStripStatusLabelGenerations.Text = "Generations = " + generations.ToString();
             graphicsPanel1.Invalidate();
-            
+            SetUniverse();
 
         }
 
@@ -112,9 +127,9 @@ namespace GOLAssignment
             LivingCellStatus();
             // Calculate the width and height of each cell in pixels
             // CELL WIDTH = WINDOW WIDTH / NUMBER OF CELLS IN X
-            int cellWidth = graphicsPanel1.ClientSize.Width / universe.GetLength(0);
+            float cellWidth = (float)graphicsPanel1.ClientSize.Width / universe.GetLength(0);
             // CELL HEIGHT = WINDOW HEIGHT / NUMBER OF CELLS IN Y
-            int cellHeight = graphicsPanel1.ClientSize.Height / universe.GetLength(1);
+            float cellHeight = (float)graphicsPanel1.ClientSize.Height / universe.GetLength(1);
 
             // A Pen for drawing the grid lines (color, width)
             Pen gridPen = new Pen(gridColor, 1);
@@ -124,20 +139,20 @@ namespace GOLAssignment
             Brush DeadBrush = new SolidBrush(backcolor);
 
             // Iterate through the universe in the y, top to bottom
-            for (int y = 0; y < universe.GetLength(1); y++)
+            for (float y = 0; y < universe.GetLength(1); y++)
             {
                 // Iterate through the universe in the x, left to right
-                for (int x = 0; x < universe.GetLength(0); x++)
+                for (float x = 0; x < universe.GetLength(0); x++)
                 {
                     // A rectangle to represent each cell in pixels
-                    Rectangle cellRect = Rectangle.Empty;
+                    RectangleF cellRect = RectangleF.Empty;
                     cellRect.X = x * cellWidth;
                     cellRect.Y = y * cellHeight;
                     cellRect.Width = cellWidth;
                     cellRect.Height = cellHeight;
 
                     // Fill the cell with a brush if alive
-                    if (universe[x, y] == true)
+                    if (universe[(int)x, (int)y] == true)
                     {
                         e.Graphics.FillRectangle(cellBrush, cellRect);
                     }
@@ -163,40 +178,40 @@ namespace GOLAssignment
                     stringFormat.Alignment = StringAlignment.Center;
                     stringFormat.LineAlignment = StringAlignment.Center;
 
-                    Rectangle rect = new Rectangle(cellRect.X, cellRect.Y, cellRect.Width, cellRect.Height);
-                    
-                    if(universeSwap == true)
-                    {
-                        newUniverse[x,y] = CountNeighborsFinite(x, y);
-                    }
-                    else if(universeSwap == false)
-                    {
-                        newUniverse[x,y] = CountNeighborsToroidal(x, y);
-                    }
+                    RectangleF rect = new RectangleF(cellRect.X, cellRect.Y, cellRect.Width, cellRect.Height);
 
-                    if (newUniverse[x,y] != 0 && neighbors == true)
+                    int CountNey = 0;
+                    if (universeSwap == true)
+                    {
+                        CountNey = CountNeighborsFinite((int)x, (int)y);
+                    }
+                    else if (universeSwap == false)
+                    {
+                        CountNey = CountNeighborsToroidal((int)x, (int)y);
+                    }
+                    if (CountNey != 0 && neighbors == true)
                     {
                         //Chainging Neighbor Colors
 
-                        if (newUniverse[x, y] >= 5)
+                        if (CountNey >= 5)
                         {
-                            e.Graphics.DrawString(newUniverse[x, y].ToString(), font, Brushes.DarkBlue, rect, stringFormat);
+                            e.Graphics.DrawString(CountNey.ToString(), font, Brushes.DarkBlue, rect, stringFormat);
                         }
-                        else if (newUniverse[x, y] <= 4 && newUniverse[x, y] > 2)
+                        else if (CountNey <= 4 && CountNey > 2)
                         {
-                            e.Graphics.DrawString(newUniverse[x, y].ToString(), font, Brushes.DarkGreen, rect, stringFormat);
+                            e.Graphics.DrawString(CountNey.ToString(), font, Brushes.DarkGreen, rect, stringFormat);
                         }
-                        else if (newUniverse[x, y] == 2)
+                        else if (CountNey == 2)
                         {
-                            e.Graphics.DrawString(newUniverse[x, y].ToString(), font, Brushes.DarkGoldenrod, rect, stringFormat);
+                            e.Graphics.DrawString(CountNey.ToString(), font, Brushes.DarkGoldenrod, rect, stringFormat);
                         }
-                        else if (newUniverse[x, y] == 1)
+                        else if (CountNey == 1)
                         {
-                            e.Graphics.DrawString(newUniverse[x, y].ToString(), font, Brushes.Red, rect, stringFormat);
+                            e.Graphics.DrawString(CountNey.ToString(), font, Brushes.Red, rect, stringFormat);
                         }
                         else
                         {
-                            e.Graphics.DrawString(newUniverse[x, y].ToString(), font, Brushes.Black, rect, stringFormat);
+                            e.Graphics.DrawString(CountNey.ToString(), font, Brushes.Black, rect, stringFormat);
                         }
                     }
                 }
@@ -211,17 +226,17 @@ namespace GOLAssignment
             if (e.Button == MouseButtons.Left)
             {
                 // Calculate the width and height of each cell in pixels
-                int cellWidth = graphicsPanel1.ClientSize.Width / universe.GetLength(0);
-                int cellHeight = graphicsPanel1.ClientSize.Height / universe.GetLength(1);
+                float cellWidth = (float)graphicsPanel1.ClientSize.Width / universe.GetLength(0);
+                float cellHeight = (float)graphicsPanel1.ClientSize.Height / universe.GetLength(1);
 
                 // Calculate the cell that was clicked in
                 // CELL X = MOUSE X / CELL WIDTH
-                int x = e.X / cellWidth;
+                float x = e.X / cellWidth;
                 // CELL Y = MOUSE Y / CELL HEIGHT
-                int y = e.Y / cellHeight;
+                float y = e.Y / cellHeight;
 
                 // Toggle the cell's state
-                universe[x, y] = !universe[x, y];
+                universe[(int)x, (int)y] = !universe[(int)x, (int)y];
 
                 // Tell Windows you need to repaint
                 graphicsPanel1.Invalidate();
@@ -447,6 +462,8 @@ namespace GOLAssignment
             Properties.Settings.Default.backcolor = backcolor;
             Properties.Settings.Default.gridColor = gridColor;
             Properties.Settings.Default.MIntervals = MIntervals;
+            Properties.Settings.Default.xx = xx;
+            Properties.Settings.Default.yy = yy;
             Properties.Settings.Default.Save();
         }
         //Grid Toggle Setting Check Mark functionality done
@@ -531,13 +548,71 @@ namespace GOLAssignment
         //Change Milliseconds and Array Size width and Height. 
         private void optionsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            CopyUniverse();
+            //Edit_Tick_Rate was the old name when I thought the box would just be used for milliseconds It is now ALL OPTIONS. 
             Edit_Tick_Rate Milli = new Edit_Tick_Rate();
             Milli.MillisecondInt = MIntervals;
+            Milli.Xaxissize = xx;
+            Milli.Yaxissize = yy;
+
             if (DialogResult.OK == Milli.ShowDialog())
             {
                 MIntervals = Milli.MillisecondInt;
                 timer.Interval = MIntervals;
+
+                xx = Milli.Xaxissize;
+
+                yy = Milli.Yaxissize;
+
+                //if(xx == Milli.Xaxissize && yy == Milli.Yaxissize)
+                //{
+                    
+                //}
+                //else
+                //{
+                    universe = new bool[Milli.Xaxissize, Milli.Yaxissize];
+                    newUniverse = new bool[Milli.Xaxissize, Milli.Yaxissize];
+                //}
+                graphicsPanel1.Invalidate();
             }
+            //Scratchpad: New array to change size and settings
+
+
+
+            //Do I need this scratchpad?
+            //bool[,] scratchPad = new bool[5, 5];
+
+            //bool[,] temp = universe;
+            //universe = scratchPad;
+            //scratchPad = temp;
+            SetUniverse();
+        }
+        //Universe Copy OG to Scratchpad
+        private void CopyUniverse()
+        {
+            for (int i = 0; i < universe.GetLength(0); i++)
+            {
+                for (int j = 0; j < universe.GetLength(1); j++)
+                {
+                    newUniverse[i,j] = universe[i, j];
+                }
+            }
+        }
+        //Set the Scratchpad to Universe
+        private void SetUniverse()
+        {
+            for (int i = 0; i < newUniverse.GetLength(0); i++)
+            {
+                for (int j = 0; j < newUniverse.GetLength(1); j++)
+                {
+                    universe[i, j] = newUniverse[i, j];
+                }
+            }
+        }
+
+        private void hUDToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            
         }
     }
     
